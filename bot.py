@@ -1,10 +1,25 @@
 import os
 import requests
 import logging
+import threading
+from http.server import BaseHTTPRequestHandler, HTTPServer
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from telegram.error import NetworkError
 from gpx_hr_merger import process_activity, load_hr_data
+
+class DummyHandler(BaseHTTPRequestHandler):
+    def do_GET(self):
+        self.send_response(200)
+        self.end_headers()
+        self.wfile.write(b"Il bot e' online su Render!")
+
+def run_dummy_server():
+    port = int(os.environ.get("PORT", 10000))
+    server = HTTPServer(('0.0.0.0', port), DummyHandler)
+    server.serve_forever()
+
+threading.Thread(target=run_dummy_server, daemon=True).start()
 
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', level=logging.WARNING)
 logging.getLogger("httpx").setLevel(logging.ERROR)
@@ -46,9 +61,8 @@ def upload_to_strava(file_path: str) -> tuple[bool, str]:
         return False, f"🇮🇹 Errore durante l'upload: {upload_res.text}\n🇬🇧 Upload error: {upload_res.text}"
 
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
-    """Gestisce gli errori in modo pulito senza intasare la console."""
     if isinstance(context.error, NetworkError):
-        print("⚠️ Problema di rete (Proxy 503 di PythonAnywhere). Il bot sta riprovando in automatico...")
+        print("⚠️ Problema di rete. Il bot sta riprovando in automatico...")
     else:
         print(f"❌ Errore imprevisto: {context.error}")
 
@@ -139,7 +153,6 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
 def main():
     app = Application.builder().token(TOKEN).build()
     
-    # Aggiunta del gestore degli errori
     app.add_error_handler(error_handler)
     
     app.add_handler(CommandHandler("start", start))
