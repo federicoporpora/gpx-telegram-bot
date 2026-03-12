@@ -6,7 +6,52 @@ from http.server import BaseHTTPRequestHandler, HTTPServer
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
 from telegram.error import NetworkError
-from gpx_hr_merger import process_activity, load_hr_data
+import urllib.request
+import sys
+from dotenv import load_dotenv
+
+load_dotenv()
+
+def process_activity_dynamic(file1, file2, dist_km, file_out):
+    url = "https://raw.githubusercontent.com/federicoporpora/gpx-hr-merger/main/gpx_hr_merger.py"
+    try:
+        req = urllib.request.Request(url, headers={'Cache-Control': 'no-cache'})
+        with urllib.request.urlopen(req) as response:
+            code = response.read().decode('utf-8')
+        
+        namespace = {'__name__': 'gpx_hr_merger_fetched'}
+        exec(code, namespace)
+        
+        if len(namespace['load_hr_data'](file1)) > 0:
+            file_hr, file_gps = file1, file2
+        else:
+            file_hr, file_gps = file2, file1
+            
+        if os.path.exists("GPS.gpx"): os.remove("GPS.gpx")
+        if os.path.exists("HR.gpx"): os.remove("HR.gpx")
+        if os.path.exists("output_fixed.tcx"): os.remove("output_fixed.tcx")
+        
+        os.rename(file_gps, "GPS.gpx")
+        os.rename(file_hr, "HR.gpx")
+        
+        old_argv = sys.argv
+        sys.argv = ['dummy.py', str(dist_km)]
+        
+        try:
+            namespace['main']()
+        finally:
+            sys.argv = old_argv
+            if os.path.exists("GPS.gpx"): os.rename("GPS.gpx", file_gps)
+            if os.path.exists("HR.gpx"): os.rename("HR.gpx", file_hr)
+            
+        if file_out != "output_fixed.tcx" and os.path.exists("output_fixed.tcx"):
+            if os.path.exists(file_out): os.remove(file_out)
+            os.rename("output_fixed.tcx", file_out)
+            
+        return os.path.exists(file_out)
+    except Exception as e:
+        print(f"Error fetching or executing dynamic script: {e}")
+        return False
 
 class DummyHandler(BaseHTTPRequestHandler):
     def do_GET(self):
@@ -27,10 +72,37 @@ logging.getLogger("telegram").setLevel(logging.ERROR)
 logging.getLogger("httpcore").setLevel(logging.ERROR)
 
 TOKEN = os.environ.get("TELEGRAM_TOKEN")
-MY_TELEGRAM_ID = YOUR_TELEGRAM_ID
-STRAVA_CLIENT_ID = YOUR_STRAVA_CLIENT_ID
+MY_TELEGRAM_ID = int(os.environ.get("MY_TELEGRAM_ID", 0))
+STRAVA_CLIENT_ID = os.environ.get("STRAVA_CLIENT_ID")
 STRAVA_CLIENT_SECRET = os.environ.get("STRAVA_CLIENT_SECRET")
 STRAVA_REFRESH_TOKEN = os.environ.get("STRAVA_REFRESH_TOKEN")
+
+def track_user(user_id: int):
+    file_path = "users.txt"
+    if not os.path.exists(file_path):
+        with open(file_path, "w") as f:
+            f.write(f"{user_id}\n")
+        return
+    
+    with open(file_path, "r") as f:
+        users = f.read().splitlines()
+    
+    if str(user_id) not in users:
+        with open(file_path, "a") as f:
+            f.write(f"{user_id}\n")
+
+async def stats(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    user_id = update.effective_user.id
+    if user_id != MY_TELEGRAM_ID:
+        return
+        
+    file_path = "users.txt"
+    count = 0
+    if os.path.exists(file_path):
+        with open(file_path, "r") as f:
+            count = len(f.read().splitlines())
+            
+    await update.message.reply_text(f"📊 Totale utenti unici: {count}")
 
 def upload_to_strava(file_path: str) -> tuple[bool, str]:
     auth_url = "https://www.strava.com/api/v3/oauth/token"
@@ -67,6 +139,7 @@ async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
         print(f"❌ Errore imprevisto: {context.error}")
 
 async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
+    track_user(update.effective_user.id)
     context.user_data['files'] = []
     await update.message.reply_text(
         "🇮🇹 Ciao! Sono pronto. 🏃‍♂️\n"
@@ -121,12 +194,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     file1, file2 = context.user_data['files'][0], context.user_data['files'][1]
     
-    if len(load_hr_data(file1)) > 0:
-        file_hr, file_gps = file1, file2
-    else:
-        file_hr, file_gps = file2, file1
-        
-    success = process_activity(file_gps, file_hr, dist_km, "output_fixed.tcx")
+    success = process_activity_dynamic(file1, file2, dist_km, "output_fixed.tcx")
     
     if success:
         user_id = update.message.from_user.id
@@ -157,6 +225,7 @@ def main():
     
     app.add_handler(CommandHandler("start", start))
     app.add_handler(CommandHandler("stop", stop))
+    app.add_handler(CommandHandler("stats", stats))
     app.add_handler(MessageHandler(filters.Document.ALL, handle_document))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
     
