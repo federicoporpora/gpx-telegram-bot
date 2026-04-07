@@ -2,6 +2,7 @@ import os
 import requests
 import logging
 import threading
+import shutil
 from http.server import BaseHTTPRequestHandler, HTTPServer
 from telegram import Update
 from telegram.ext import Application, CommandHandler, MessageHandler, filters, ContextTypes
@@ -31,8 +32,8 @@ def process_activity_dynamic(file1, file2, dist_km, file_out):
         if os.path.exists("HR.gpx"): os.remove("HR.gpx")
         if os.path.exists("output_fixed.tcx"): os.remove("output_fixed.tcx")
         
-        os.rename(file_gps, "GPS.gpx")
-        os.rename(file_hr, "HR.gpx")
+        shutil.copy(file_gps, "GPS.gpx")
+        shutil.copy(file_hr, "HR.gpx")
         
         old_argv = sys.argv
         sys.argv = ['dummy.py', str(dist_km)]
@@ -41,8 +42,8 @@ def process_activity_dynamic(file1, file2, dist_km, file_out):
             namespace['main']()
         finally:
             sys.argv = old_argv
-            if os.path.exists("GPS.gpx"): os.rename("GPS.gpx", file_gps)
-            if os.path.exists("HR.gpx"): os.rename("HR.gpx", file_hr)
+            if os.path.exists("GPS.gpx"): os.remove("GPS.gpx")
+            if os.path.exists("HR.gpx"): os.remove("HR.gpx")
             
         if file_out != "output_fixed.tcx" and os.path.exists("output_fixed.tcx"):
             if os.path.exists(file_out): os.remove(file_out)
@@ -171,8 +172,10 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
         await update.message.reply_text("🇮🇹 ⚠️ Hai già inviato due file.\n🇬🇧 ⚠️ You have already sent two files.")
         return
     
-    await file.download_to_drive(file_name)
-    context.user_data['files'].append(file_name)
+    # Use a unique name to avoid collisions if multiple files have the same name
+    unique_file_name = f"{update.message.message_id}_{file_name}"
+    await file.download_to_drive(unique_file_name)
+    context.user_data['files'].append(unique_file_name)
     
     if len(context.user_data['files']) == 1:
         await update.message.reply_text(f"🇮🇹 ✅ Ricevuto 1/2: {file_name}.\n🇬🇧 ✅ Received 1/2: {file_name}.")
