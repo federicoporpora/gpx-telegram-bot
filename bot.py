@@ -19,7 +19,7 @@ class DummyHandler(BaseHTTPRequestHandler):
     def do_GET(self):
         self.send_response(200)
         self.end_headers()
-        self.wfile.write(b"Il bot e' online su Render!")
+        self.wfile.write(b"The bot is online on Render!")
 
 def run_dummy_server():
     port = int(os.environ.get("PORT", 10000))
@@ -54,24 +54,22 @@ async def start(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     keyboard = [
         [
-            InlineKeyboardButton("🔗 Unisci GPX/HR", callback_data='action_merge_hr'),
-            InlineKeyboardButton("✂️ Taglia File", callback_data='action_crop')
+            InlineKeyboardButton("🔗 Merge GPX/HR", callback_data='action_merge_hr'),
+            InlineKeyboardButton("✂️ Crop File", callback_data='action_crop')
         ],
         [
-            InlineKeyboardButton("⏱️ Fix Tempo", callback_data='action_fix_time'),
-            InlineKeyboardButton("🔗 Unisci Tracce", callback_data='action_merge_seq')
+            InlineKeyboardButton("⏱️ Fix Time", callback_data='action_fix_time'),
+            InlineKeyboardButton("🔗 Merge Tracks", callback_data='action_merge_seq')
         ],
         [
-            InlineKeyboardButton("⛰️ Fix Altitudine", callback_data='action_fix_elev'),
-            InlineKeyboardButton("🗺️ Genera Mappa", callback_data='action_map')
+            InlineKeyboardButton("⛰️ Fix Elevation", callback_data='action_fix_elev'),
+            InlineKeyboardButton("🗺️ Generate Map", callback_data='action_map')
         ]
     ]
     reply_markup = InlineKeyboardMarkup(keyboard)
     
     msg = (
-        "🇮🇹 Ciao! Sono pronto. 🏃‍♂️ Scegli una funzione dal menu:\n"
-        "💡 Usa /stop in caso di errori.\n\n"
-        "🇬🇧 Hello! I'm ready. 🏃‍♂️ Choose a function from the menu:\n"
+        "Hello! I'm ready. 🏃‍♂️ Choose a function from the menu:\n"
         "💡 Use /stop in case of errors."
     )
     
@@ -86,7 +84,7 @@ async def stop(update: Update, context: ContextTypes.DEFAULT_TYPE):
             if os.path.exists(f): os.remove(f)
     context.user_data['files'] = []
     context.user_data['action'] = None
-    await update.message.reply_text("🇮🇹 🛑 Memoria svuotata!\n🇬🇧 🛑 Memory cleared!")
+    await update.message.reply_text("🛑 Memory cleared!")
 
 async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
     query = update.callback_query
@@ -101,21 +99,21 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['action'] = data
         context.user_data['files'] = []
         
-        back_keyboard = [[InlineKeyboardButton("🔙 Indietro / Back", callback_data='back_to_start')]]
+        back_keyboard = [[InlineKeyboardButton("🔙 Back", callback_data='back_to_start')]]
         reply_markup = InlineKeyboardMarkup(back_keyboard)
         
         if data == 'action_merge_hr':
-            msg = "🇮🇹 🔗 **Unisci GPX e Cardio**\nInvia per primo il file della traccia GPS (es. da orologio o app).\n\n🇬🇧 🔗 **Merge GPX and HR**\nSend the GPS track file first."
+            msg = "🔗 **Merge GPX and HR**\nSend the GPS track file first (e.g., from watch or app)."
         elif data == 'action_crop':
-            msg = "🇮🇹 ✂️ **Taglia GPX**\nInvia il file GPX da tagliare.\n\n🇬🇧 Send the GPX file to crop."
+            msg = "✂️ **Crop GPX**\nSend the GPX file to crop."
         elif data == 'action_fix_time':
-            msg = "🇮🇹 ⏱️ **Fix Tempo/Ritmo**\nInvia il file GPX a cui correggere il tempo.\n\n🇬🇧 Send the GPX file to fix time."
+            msg = "⏱️ **Fix Time/Pace**\nSend the GPX file to fix time."
         elif data == 'action_merge_seq':
-            msg = "🇮🇹 🔗 **Unisci Tracce (Sequenziale)**\nInvia i file GPX in ordine cronologico. Al termine premi 'Fatto'.\n\n🇬🇧 Send GPX files in order to merge."
+            msg = "🔗 **Merge Tracks (Sequential)**\nSend the GPX files in chronological order. When done, press 'Done'."
         elif data == 'action_fix_elev':
-            msg = "🇮🇹 ⛰️ **Fix Altitudine**\nInvia il file GPX di cui ricalcolare l'altitudine.\n\n🇬🇧 Send the GPX file to fix elevation."
+            msg = "⛰️ **Fix Elevation**\nSend the GPX file to recalculate elevation."
         elif data == 'action_map':
-            msg = "🇮🇹 🗺️ **Genera Mappa**\nInvia il file GPX di cui generare la mappa.\n\n🇬🇧 Send the GPX file to generate map."
+            msg = "🗺️ **Generate Map**\nSend the GPX file to generate a map."
             
         await query.edit_message_text(msg, reply_markup=reply_markup, parse_mode='Markdown')
         
@@ -127,19 +125,19 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
         context.user_data['map_style'] = style
         keyboard = [
             [
-                InlineKeyboardButton("🟠 Arancione", callback_data='mapcolor_#FC4C02'),
-                InlineKeyboardButton("🔴 Rosso", callback_data='mapcolor_#FF0000')
+                InlineKeyboardButton("🟠 Orange", callback_data='mapcolor_#FC4C02'),
+                InlineKeyboardButton("🔴 Red", callback_data='mapcolor_#FF0000')
             ],
             [
-                InlineKeyboardButton("🔵 Blu", callback_data='mapcolor_#0000FF'),
-                InlineKeyboardButton("🟢 Verde", callback_data='mapcolor_#00FF00')
+                InlineKeyboardButton("🔵 Blue", callback_data='mapcolor_#0000FF'),
+                InlineKeyboardButton("🟢 Green", callback_data='mapcolor_#00FF00')
             ],
             [
-                InlineKeyboardButton("⚫ Nero", callback_data='mapcolor_#000000'),
-                InlineKeyboardButton("⚪ Bianco", callback_data='mapcolor_#FFFFFF')
+                InlineKeyboardButton("⚫ Black", callback_data='mapcolor_#000000'),
+                InlineKeyboardButton("⚪ White", callback_data='mapcolor_#FFFFFF')
             ]
         ]
-        await query.edit_message_text("🎨 Scegli il colore della traccia:", reply_markup=InlineKeyboardMarkup(keyboard))
+        await query.edit_message_text("🎨 Choose the track color:", reply_markup=InlineKeyboardMarkup(keyboard))
         
     elif data.startswith('mapcolor_'):
         color = data.split('_')[1]
@@ -149,7 +147,7 @@ async def button_handler(update: Update, context: ContextTypes.DEFAULT_TYPE):
 async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
     action = context.user_data.get('action')
     if not action:
-        await update.message.reply_text("🇮🇹 ⚠️ Seleziona prima un'azione dal comando /start.\n🇬🇧 ⚠️ Select an action from /start first.")
+        await update.message.reply_text("⚠️ Select an action from /start first.")
         return
         
     file = await update.message.document.get_file()
@@ -165,21 +163,21 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
     
     if action == 'action_merge_hr':
         if len(files) == 1:
-            await update.message.reply_text(f"✅ Ricevuto GPS: {file_name}\nOra inviami il file con i battiti cardiaci (HR).")
+            await update.message.reply_text(f"✅ Received GPS: {file_name}\nNow send me the heart rate (HR) file.")
         elif len(files) == 2:
-            await update.message.reply_text("✅ Ricevuti entrambi! Ora scrivimi la distanza totale in km (es: 10.5).")
+            await update.message.reply_text("✅ Received both! Now send me the total distance in km (e.g., 10.5).")
             
     elif action == 'action_crop':
         if len(files) == 1:
-            await update.message.reply_text("✅ Ricevuto! Scrivimi i km da tagliare all'inizio e alla fine separati da spazio.\nEs: `1.5 0.5` per tagliare 1.5km inizio e 0.5km fine.\nEs: `0 2.0` per togliere 2km alla fine.", parse_mode='Markdown')
+            await update.message.reply_text("✅ Received! Send me the km to crop at the start and end separated by a space.\nEx: `1.5 0.5` to crop 1.5km from the start and 0.5km from the end.\nEx: `0 2.0` to remove 2km at the end.", parse_mode='Markdown')
             
     elif action == 'action_fix_time':
         if len(files) == 1:
-            await update.message.reply_text("✅ Ricevuto! Scrivimi i minuti totali che deve durare l'attività.\nEs: `45.5` per 45 minuti e 30 secondi.", parse_mode='Markdown')
+            await update.message.reply_text("✅ Received! Send me the total minutes the activity should last.\nEx: `45.5` for 45 minutes and 30 seconds.", parse_mode='Markdown')
             
     elif action == 'action_merge_seq':
-        markup = InlineKeyboardMarkup([[InlineKeyboardButton("✅ Fatto (Unisci Tracce)", callback_data='execute_merge_seq')]])
-        await update.message.reply_text(f"✅ Ricevuto file {len(files)}: {file_name}. Invia il prossimo oppure premi Fatto.", reply_markup=markup)
+        markup = InlineKeyboardMarkup([[InlineKeyboardButton("✅ Done (Merge Tracks)", callback_data='execute_merge_seq')]])
+        await update.message.reply_text(f"✅ Received file {len(files)}: {file_name}. Send the next one or press Done.", reply_markup=markup)
         
     elif action == 'action_fix_elev':
         if len(files) == 1:
@@ -189,25 +187,25 @@ async def handle_document(update: Update, context: ContextTypes.DEFAULT_TYPE):
         if len(files) == 1:
             keyboard = [
                 [
-                    InlineKeyboardButton("🌑 Scura", callback_data='mapstyle_dark'),
-                    InlineKeyboardButton("☀️ Chiara", callback_data='mapstyle_light')
+                    InlineKeyboardButton("🌑 Dark", callback_data='mapstyle_dark'),
+                    InlineKeyboardButton("☀️ Light", callback_data='mapstyle_light')
                 ],
                 [
-                    InlineKeyboardButton("⛰️ Topografica", callback_data='mapstyle_topo'),
+                    InlineKeyboardButton("⛰️ Topographic", callback_data='mapstyle_topo'),
                     InlineKeyboardButton("🛰️ Satellite", callback_data='mapstyle_satellite')
                 ],
                 [
-                    InlineKeyboardButton("🔲 Trasparente (PNG)", callback_data='mapstyle_transparent')
+                    InlineKeyboardButton("🔲 Transparent (PNG)", callback_data='mapstyle_transparent')
                 ]
             ]
-            await update.message.reply_text("✅ File ricevuto! Scegli lo stile della mappa:", reply_markup=InlineKeyboardMarkup(keyboard))
+            await update.message.reply_text("✅ File received! Choose the map style:", reply_markup=InlineKeyboardMarkup(keyboard))
 
 async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
     action = context.user_data.get('action')
     files = context.user_data.get('files', [])
     
     if not action or not files:
-        await update.message.reply_text("🇮🇹 ⚠️ Seleziona un'azione e inviami il file prima.\n🇬🇧 ⚠️ Select an action and send a file first.")
+        await update.message.reply_text("⚠️ Select an action and send a file first.")
         return
         
     text = update.message.text.replace(',', '.')
@@ -218,7 +216,7 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             dist_km = float(text)
             await process_merge_hr(update.message, context, dist_km)
         except ValueError:
-            await update.message.reply_text("⚠️ Numero non valido.")
+            await update.message.reply_text("⚠️ Invalid number.")
             
     elif action == 'action_crop':
         try:
@@ -227,14 +225,14 @@ async def handle_text(update: Update, context: ContextTypes.DEFAULT_TYPE):
             end_km = float(parts[1]) if len(parts) > 1 else 0.0
             await process_crop(update.message, context, start_km, end_km)
         except ValueError:
-            await update.message.reply_text("⚠️ Formato non valido. Esempio: `1.5 0.5`", parse_mode='Markdown')
+            await update.message.reply_text("⚠️ Invalid format. Example: `1.5 0.5`", parse_mode='Markdown')
             
     elif action == 'action_fix_time':
         try:
             mins = float(text)
             await process_fix_time(update.message, context, mins)
         except ValueError:
-            await update.message.reply_text("⚠️ Numero non valido. Esempio: `45.5`", parse_mode='Markdown')
+            await update.message.reply_text("⚠️ Invalid number. Example: `45.5`", parse_mode='Markdown')
 
 # --- PROCESSING FUNCTIONS ---
 
@@ -248,7 +246,7 @@ async def cleanup(context):
     if os.path.exists("map.png"): os.remove("map.png")
 
 async def process_merge_hr(message, context, dist_km):
-    await message.reply_text("⚙️ Elaborazione in corso...")
+    await message.reply_text("⚙️ Processing in progress...")
     f1, f2 = context.user_data['files'][0], context.user_data['files'][1]
     
     try:
@@ -266,60 +264,60 @@ async def process_merge_hr(message, context, dist_km):
         sys.argv = old_argv
         
         with open("output_fixed.tcx", "rb") as doc:
-            await message.reply_document(doc, filename="Attivita_Unita.tcx")
+            await message.reply_document(doc, filename="Merged_Activity.tcx")
     except Exception as e:
-        await message.reply_text(f"❌ Errore elaborazione: {e}")
+        await message.reply_text(f"❌ Processing error: {e}")
     finally:
         if os.path.exists("GPS.gpx"): os.remove("GPS.gpx")
         if os.path.exists("HR.gpx"): os.remove("HR.gpx")
         await cleanup(context)
 
 async def process_crop(message, context, start_km, end_km):
-    await message.reply_text("⚙️ Taglio in corso...")
+    await message.reply_text("⚙️ Cropping in progress...")
     f = context.user_data['files'][0]
     out = "output.gpx"
     if gpx_utils.crop_gpx(f, start_km, end_km, out):
         with open(out, "rb") as doc:
-            await message.reply_document(doc, filename="Tagliato.gpx")
+            await message.reply_document(doc, filename="Cropped.gpx")
     else:
-        await message.reply_text("❌ Errore durante il taglio. Assicurati che i km siano validi.")
+        await message.reply_text("❌ Cropping error. Make sure the km are valid.")
     await cleanup(context)
 
 async def process_fix_time(message, context, target_mins):
-    await message.reply_text("⚙️ Ricalcolo timestamp in corso...")
+    await message.reply_text("⚙️ Recalculating timestamps in progress...")
     f = context.user_data['files'][0]
     out = "output.gpx"
     if gpx_utils.fix_time(f, target_mins, out):
         with open(out, "rb") as doc:
-            await message.reply_document(doc, filename="Tempo_Ricalcolato.gpx")
+            await message.reply_document(doc, filename="Recalculated_Time.gpx")
     else:
-        await message.reply_text("❌ Errore durante il ricalcolo.")
+        await message.reply_text("❌ Error during recalculation.")
     await cleanup(context)
 
 async def process_merge_seq(message, context):
-    await message.reply_text("⚙️ Saldatura tracce in corso...")
+    await message.reply_text("⚙️ Merging tracks in progress...")
     files = context.user_data['files']
     out = "output.gpx"
     if gpx_utils.merge_sequential(files, out):
         with open(out, "rb") as doc:
-            await message.reply_document(doc, filename="Traccia_Saldata.gpx")
+            await message.reply_document(doc, filename="Merged_Track.gpx")
     else:
-        await message.reply_text("❌ Errore durante la saldatura.")
+        await message.reply_text("❌ Error during merging.")
     await cleanup(context)
 
 async def process_fix_elev(message, context):
-    await message.reply_text("⚙️ Scaricamento quote topografiche in corso (potrebbe volerci un minuto)...")
+    await message.reply_text("⚙️ Downloading topographic elevations in progress (might take a minute)...")
     f = context.user_data['files'][0]
     out = "output.gpx"
     if gpx_utils.fix_elevation(f, out):
         with open(out, "rb") as doc:
-            await message.reply_document(doc, filename="Altitudine_Ricalcolata.gpx")
+            await message.reply_document(doc, filename="Recalculated_Elevation.gpx")
     else:
-        await message.reply_text("❌ Errore durante il ricalcolo altitudine.")
+        await message.reply_text("❌ Error during elevation recalculation.")
     await cleanup(context)
 
 async def process_map(message, context):
-    await message.reply_text("🎨 Generazione mappa in corso...")
+    await message.reply_text("🎨 Generating map in progress...")
     f = context.user_data['files'][0]
     style = context.user_data.get('map_style', 'dark')
     color = context.user_data.get('map_color', '#FC4C02')
@@ -327,18 +325,18 @@ async def process_map(message, context):
     if gpx_utils.generate_map(f, out, style, color):
         with open(out, "rb") as photo:
             if style == 'transparent':
-                await message.reply_document(photo, filename="mappa_trasparente.png")
+                await message.reply_document(photo, filename="transparent_map.png")
             else:
                 await message.reply_photo(photo)
     else:
-        await message.reply_text("❌ Errore. Nessuna coordinata trovata o errore di rendering.")
+        await message.reply_text("❌ Error. No coordinates found or rendering error.")
     await cleanup(context)
 
 async def error_handler(update: object, context: ContextTypes.DEFAULT_TYPE):
     if isinstance(context.error, NetworkError):
-        print("⚠️ Problema di rete.")
+        print("⚠️ Network problem.")
     else:
-        print(f"❌ Errore imprevisto: {context.error}")
+        print(f"❌ Unexpected error: {context.error}")
 
 def main():
     app = Application.builder().token(TOKEN).build()
@@ -350,7 +348,7 @@ def main():
     app.add_handler(MessageHandler(filters.Document.ALL, handle_document))
     app.add_handler(MessageHandler(filters.TEXT & ~filters.COMMAND, handle_text))
     
-    print("Bot avviato! (Stand-alone mode)")
+    print("Bot started! (Stand-alone mode)")
     app.run_polling()
 
 if __name__ == "__main__":
