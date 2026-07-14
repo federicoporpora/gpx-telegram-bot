@@ -1,2 +1,6 @@
 __pycache__/
 .env
+users.txt
+*.gpx
+*.tcx
+*.png
